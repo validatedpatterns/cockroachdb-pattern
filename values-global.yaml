@@ -1,6 +1,8 @@
 ---
 global:
-  pattern: multicloud-gitops
+  pattern: cockroachdb-pattern
+  vault:
+    secretStoreName: vault-backend
 
   options:
     useCSV: false

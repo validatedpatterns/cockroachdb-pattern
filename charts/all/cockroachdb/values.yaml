@@ -1,0 +1,21 @@
+vault:
+  clusterSecretStoreName: vault-backend
+
+provider: aws
+region: us-central1
+zone: us-central1-a
+namespaces:
+  - cockroachdb-aws-cl1
+  - cockroachdb-aws-cl2
+replicas: 3
+resources:
+  requests:
+    cpu: "2"
+    memory: "8Gi"
+  limits:
+    cpu: "2"
+    memory: "8Gi"
+volumeClaimTemplatesStorage: 100Gi
+
+
+

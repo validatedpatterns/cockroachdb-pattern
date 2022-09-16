@@ -1,0 +1,35 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: init-cockroachdb
+spec:
+  template:
+    spec:
+      serviceAccountName: create-certs-service-account
+      containers:
+      - name: init-cockroachdb
+        image: 'bitnami/kubectl'
+        command:
+          - sh
+          - -c
+          - |
+            echo " Initializing cockroach db"
+            initialized=false;
+            while true;
+            do
+              kubectl get pods;
+              echo "Waiting for Broker to be ready."
+              sleep 5
+              if ([ "$(kubectl get pods -l=app='cockroachdb' -o jsonpath='{.items[0].status.containerStatuses[0].ready}')" != "true" ] && 
+                [ ! -z "$(kubectl get pods -l=app='cockroachdb' -o jsonpath='{.items[0].status.containerStatuses[0].state.running}')"  ]);
+              then
+                echo "Initializing cockroach db .. "
+                kubectl exec --namespace {{ .Release.Namespace }} -it cockroachdb-0 -- /cockroach/cockroach init --certs-dir=/cockroach/cockroach-certs || true;
+                sleep 20;
+                break;
+              else
+                kubectl get pods -l=app='cockroachdb'
+              fi
+            done;
+      restartPolicy: Never
+  backoffLimit: 4

@@ -5,11 +5,11 @@ global:
     installPlanApproval: Automatic
 
 clusterGroup:
-  name: region-one
+  name: region-two
   isHubCluster: false
 
   namespaces:
-  - cockroachdb-region-one
+  - cockroachdb-region-two
 
   subscriptions:
 
@@ -18,7 +18,7 @@ clusterGroup:
 
   applications:
   - name: cockroachdb
-    namespace: cockroachdb-region-one
+    namespace: cockroachdb-region-two
     project: cockroachdb
     path: charts/all/cockroachdb
     overrides:
@@ -46,7 +46,6 @@ clusterGroup:
       value: us-central1
     - name: zone
       value: us-central1-a
-    
 
   imperative:
     # NOTE: We *must* use lists and not hashes. As hashes lose ordering once parsed by helm

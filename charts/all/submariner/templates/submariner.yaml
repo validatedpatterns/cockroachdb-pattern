@@ -1,0 +1,98 @@
+{{- if .Values.clusterGroup.submarinerAddon }}
+{{- $clustersetName := $.Values.clusterGroup.name }}
+{{- $clusterSecretStoreName := $.Values.global.vault.secretStoreName }}
+{{- range .Values.clusterGroup.managedClusterGroups }}
+---
+apiVersion: addon.open-cluster-management.io/v1alpha1
+kind: ManagedClusterAddOn
+metadata:
+  name: submariner
+  namespace:  {{ .name }}
+spec:
+  installNamespace: submariner-operator
+{{- if eq .provider "aws" }}
+---
+apiVersion: external-secrets.io/v1alpha1
+kind: ExternalSecret
+metadata:
+  name: {{ .name }}-aws-creds
+  namespace: {{ .name }}
+spec:
+  secretStoreRef:
+    name: "{{ $clusterSecretStoreName }}"
+    kind: ClusterSecretStore
+  target:
+    name: {{ .name }}-aws-creds
+    creationPolicy: Owner
+  data:
+  - secretKey: aws_access_key_id
+    remoteRef:
+      key: secret/{{ $clustersetName }}/{{ .name }}-cloud-creds
+      property: aws_access_key_id
+  - secretKey: aws_secret_access_key
+    remoteRef:
+      key: secret/{{ $clustersetName }}/{{ .name }}-cloud-creds
+      property: aws_secret_access_key
+---
+apiVersion: submarineraddon.open-cluster-management.io/v1alpha1
+kind: SubmarinerConfig
+metadata:
+  name: submariner
+  namespace:  {{ .name }}
+spec:
+  gatewayConfig:
+    gateways: 1
+    aws:
+      instanceType: {{ .submariner.instanceType }}
+  IPSecNATTPort: 4500
+  NATTEnable: true
+  cableDriver: libreswan
+  credentialsSecret:
+    name: {{ .name }}-aws-creds
+{{- end }}
+
+{{- if eq .provider "gcp" }}
+---
+apiVersion: external-secrets.io/v1alpha1
+kind: ExternalSecret
+metadata:
+  name: {{ .name }}-gcp-creds
+  namespace: {{ .name }}
+spec:
+  secretStoreRef:
+    name: "{{ $clusterSecretStoreName }}"
+    kind: ClusterSecretStore
+  target:
+    name: {{ .name }}-gcp-creds
+    creationPolicy: Owner
+  data:
+  - secretKey: osServiceAccount.json
+    remoteRef:
+      key: secret/{{ $clustersetName }}/{{ .name }}-cloud-creds
+      property: content
+---
+apiVersion: submarineraddon.open-cluster-management.io/v1alpha1
+kind: SubmarinerConfig
+metadata:
+  name: submariner
+  namespace: {{ .name }}
+spec:
+  gatewayConfig:
+    gateways: 1
+  IPSecNATTPort: 4500
+  NATTEnable: true
+  cableDriver: libreswan
+  credentialsSecret:
+    name: {{ .name }}-gcp-creds
+{{- end }}
+{{- end }}
+---
+apiVersion: submariner.io/v1alpha1
+kind: Broker
+metadata:
+  name: submariner-broker
+  namespace: submariner-broker
+spec:
+  globalnetEnabled: false
+{{- end }}
+

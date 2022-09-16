@@ -4,12 +4,14 @@ clusterGroup:
   # Note: setting this to true stores the vault unseal keys inside a cluster secret and
   # is fundamentally insecure
   insecureUnsealVaultInsideCluster: false
+  autoImport: true
+  submarinerAddon: true
 
   namespaces:
   - open-cluster-management
   - vault
   - golang-external-secrets
-  - config-demo
+  - submariner
 
   subscriptions:
     acm:
@@ -20,7 +22,7 @@ clusterGroup:
 
   projects:
   - hub
-  - config-demo
+  - submariner
 
   applications:
     acm:
@@ -34,13 +36,27 @@ clusterGroup:
         jsonPointers:
           - /spec/loggingCA
 
+    acm-import-clusters:
+      name:  acm-import-clusters
+      namespace: open-cluster-management
+      project: hub
+      path: common/acm-import-clusters
+      retry: 100
+
+    submariner:
+      name:  submariner
+      namespace: submariner
+      project: submariner
+      path: charts/all/submariner
+      retry: 100
+
     vault:
       name: vault
       namespace: vault
       project: hub
       chart: vault
       repoURL: https://helm.releases.hashicorp.com
-      targetRevision: v0.21.0
+      targetRevision: v0.20.1
       overrides:
       - name: global.openshift
         value: "true"
@@ -59,19 +75,13 @@ clusterGroup:
       - name: server.image.repository
         value: "registry.connect.redhat.com/hashicorp/vault"
       - name: server.image.tag
-        value: "1.11.2-ubi"
+        value: "1.10.3-ubi"
 
     golang-external-secrets:
       name: golang-external-secrets
       namespace: golang-external-secrets
       project: hub
       path: common/golang-external-secrets
-
-    config-demo:
-      name: config-demo
-      namespace: config-demo
-      project: config-demo
-      path: charts/all/config-demo
 
   imperative:
     # NOTE: We *must* use lists and not hashes. As hashes lose ordering once parsed by helm
@@ -91,12 +101,37 @@ clusterGroup:
   managedClusterGroups:
     region-one:
       name: region-one
+      provider: aws
+      submariner:
+        instanceType: m5.xlarge
       helmOverrides:
       - name: clusterGroup.isHubCluster
         value: false
       clusterSelector:
         matchLabels:
           clusterGroup: region-one
+    region-two:
+      name: region-two
+      provider: aws
+      submariner:
+        instanceType: m5.xlarge
+      helmOverrides:
+      - name: clusterGroup.isHubCluster
+        value: false
+      clusterSelector:
+        matchLabels:
+          clusterGroup: region-two
+    region-three:
+      name: region-three
+      provider: gcp
+      submariner:
+        instanceType: n2-standard-8
+      helmOverrides:
+      - name: clusterGroup.isHubCluster
+        value: false
+      clusterSelector:
+        matchLabels:
+          clusterGroup: region-three
 
 #  To have apps in multiple flavors, use namespaces and use helm overrides as appropriate
 #
