@@ -10,6 +10,7 @@ metadata:
   namespace:  {{ .name }}
 spec:
   installNamespace: submariner-operator
+
 {{- if eq .provider "aws" }}
 ---
 apiVersion: external-secrets.io/v1alpha1
@@ -50,7 +51,6 @@ spec:
   credentialsSecret:
     name: {{ .name }}-aws-creds
 {{- end }}
-
 {{- if eq .provider "gcp" }}
 ---
 apiVersion: external-secrets.io/v1alpha1
@@ -91,8 +91,7 @@ apiVersion: submariner.io/v1alpha1
 kind: Broker
 metadata:
   name: submariner-broker
-  namespace: submariner-broker
+  namespace: {{ $clustersetName }}-broker
 spec:
   globalnetEnabled: false
 {{- end }}
-

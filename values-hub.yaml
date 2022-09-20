@@ -12,6 +12,9 @@ clusterGroup:
   - vault
   - golang-external-secrets
   - submariner
+  - region-one
+  - region-two
+  - region-three
 
   subscriptions:
     acm:
