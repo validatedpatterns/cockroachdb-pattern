@@ -9,7 +9,7 @@ clusterGroup:
   isHubCluster: false
 
   namespaces:
-  - cockroachdb-region-one
+  - cockroachdb
 
   subscriptions:
 
@@ -18,7 +18,7 @@ clusterGroup:
 
   applications:
   - name: cockroachdb
-    namespace: cockroachdb-region-one
+    namespace: cockroachdb
     project: cockroachdb
     path: charts/all/cockroachdb
     overrides:
@@ -36,16 +36,18 @@ clusterGroup:
       value: "1"
     - name: resources.limits.memory
       value: "2Gi"
-    - name: namespaces.0
-      value: cockroachdb-region-one
-    - name: namespaces.1
-      value: cockroachdb-region-two
-    - name: namespaces.2
-      value: cockroachdb-region-three
     - name: region
-      value: us-central1
+      value: us-east-2
     - name: zone
-      value: us-central1-a
+      value: us-east-2a
+    - name: clusters.0
+      value: region-one
+    - name: clusters.1
+      value: region-two
+    - name: clusters.2
+      value: region-three
+    - name: clusterName
+      value: region-one
     
 
   imperative:

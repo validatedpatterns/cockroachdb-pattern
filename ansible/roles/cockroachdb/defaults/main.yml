@@ -1,0 +1,14 @@
+# Empy join command list for use later when building out the join command
+# join_command: []
+
+# # Empty list for node crt command
+# node_crt_key_command: []
+
+# clusters:
+#   - {name: "us-east-1-name", contexts: "aws-cl1", cloud: "aws"}
+#   - {name: "us-west-1-name", contexts: "aws-cl2", cloud: "aws"}
+#   - {name: "us-central1", contexts: "gcp-cl1", cloud: "gcp"}
+
+cockroach: /usr/local/bin/cockroach
+
+certs_file_dir: /tmp/cockroachdb-certs

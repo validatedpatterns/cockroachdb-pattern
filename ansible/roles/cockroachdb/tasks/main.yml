@@ -1,0 +1,98 @@
+---
+# - name: Create variables for node crt command for each cluster
+#   set_fact: 
+#     node_crt_key_{{ my_idx }}: "*.{{ item.contexts }}.cockroachdb.cockroachdb.svc.clusterset.local"
+#   loop: "{{ clusters }}"
+#   loop_control:
+#     index_var: my_idx
+
+# - name: Creat list of node crt key command
+#   ansible.builtin.set_fact:
+#     node_crt_key_command: "{{ node_crt_key_command | default('') + [vars['node_crt_key_' + my_idx|string]] }}"
+#   loop: "{{ clusters }}"
+#   loop_control:
+#     index_var: my_idx
+
+# - name: Format node crt key command
+#   ansible.builtin.set_fact:
+#     format_node_crt_key_command: "{{ node_crt_key_command | join (' ') }}"
+
+# - name: Dispalying formatted node cert key command 
+#   ansible.builtin.debug:
+#     msg: "{{ format_node_crt_key_command }}"
+
+
+- name: Create directories needed for cockroachdb certs
+  ansible.builtin.file:
+    path: "{{ certs_file_dir }}/files/{{ item }}"
+    state: directory
+  loop: 
+    - certs
+    - keys
+
+- name: Create the CA certificate and key pair
+  ansible.builtin.command: "{{ cockroach }} cert create-ca --certs-dir={{ certs_file_dir }}/files/certs/ --ca-key={{ certs_file_dir }}/files/keys/ca.key"
+  args:
+    creates: "{{ certs_file_dir }}/files/certs/ca.crt"
+
+# - name: Create a client certificate and key pair for the root user
+#   ansible.builtin.command: "{{ cockroach }} cert create-client root --certs-dir={{ certs_file_dir }}/files/certs/ --ca-key={{ certs_file_dir }}/files/keys/ca.key"
+#   args:
+#     creates: "{{ certs_file_dir }}/files/certs/client.root.crt"
+
+# - name: Fetch created client certificate and key pair
+#   set_fact:
+#     var_{{ item.name }}: "{{ lookup('file', '{{ certs_file_dir }}/files/certs/{{ item.file }}') }}"
+#   loop:
+#     - {file: ca.crt, name: ca_crt}
+#     - {file: client.root.crt, name: client_root_crt}
+#     - {file: client.root.key, name: client_root_key}
+
+# - name: Create cockroachdb.client.root secret on managed clusters
+#   kubernetes.core.k8s:
+#     state: present
+#     context: "{{ item.contexts }}"
+#     definition:
+#       apiVersion: v1
+#       kind: Secret
+#       data:
+#         ca.crt: "{{ var_ca_crt | b64encode }}"
+#         client.root.crt: "{{ var_client_root_crt | b64encode }}"
+#         client.root.key: "{{ var_client_root_key | b64encode }}"
+#       metadata:
+#         name: cockroachdb.client.root
+#         namespace: cockroachdb
+#       type: Opaque
+#   loop: "{{ clusters }}"
+
+# - name: Create the certificate and key pair for your CockroachDB nodes
+#   ansible.builtin.command: "{{ cockroach }} cert create-node localhost 127.0.0.1 cockroachdb-public cockroachdb-public.cockroachdb cockroachdb-public.cockroachdb.svc.cluster.local *.cockroachdb *.cockroachdb.cockroachdb *.cockroachdb.cockroachdb.svc.cluster.local {{ format_node_crt_key_command }} *.cockroachdb.cockroachdb.svc.clusterset.local --certs-dir={{ certs_file_dir }}/files/certs --ca-key={{ certs_file_dir }}/files/keys/ca.key"
+#   args:
+#     creates: "{{ certs_file_dir }}/files/certs/node.crt"
+
+# - name: Fetch created node client certificate
+#   set_fact:
+#     node_crt: "{{ lookup('file', '{{ certs_file_dir }}/files/certs/node.crt') }}"
+
+# - name: Fetch created node client key
+#   set_fact:
+#     node_key: "{{ lookup('file', '{{ certs_file_dir }}/files/certs/node.key') }}"
+
+# - name: Create cockroachdb.node secret on managed item
+#   kubernetes.core.k8s:
+#     state: present
+#     context: "{{ item.contexts }}"
+#     definition:
+#       apiVersion: v1
+#       kind: Secret
+#       data:
+#         ca.crt: "{{ var_ca_crt | b64encode }}"
+#         client.root.crt: "{{ var_client_root_crt | b64encode }}"
+#         client.root.key: "{{ var_client_root_key | b64encode }}"
+#         node.crt: "{{ node_crt | b64encode }}"
+#         node.key: "{{ node_key | b64encode }}"
+#       metadata:
+#         name: cockroachdb.node
+#         namespace: cockroachdb
+#       type: Opaque
+#   loop: "{{ clusters }}"

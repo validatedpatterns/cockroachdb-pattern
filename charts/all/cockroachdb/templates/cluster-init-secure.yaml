@@ -13,7 +13,35 @@ spec:
           - sh
           - -c
           - |
-            echo " Initializing cockroach db"
+            echo "Checking service imports ";
+            CLUSTER_COUNT={{ len .Values.clusters }};
+
+            while true;
+            do
+              TOTAL_IMPORT_COUNT=$(kubectl get serviceimport -A | grep cockroachdb-cockroachdb |  wc -l | xargs);
+              if [ $CLUSTER_COUNT -eq $TOTAL_IMPORT_COUNT ] 
+              then
+                break;
+              else
+                echo "Waiting for submariner to establish connection"
+              fi
+            done;
+
+            echo "Checking submariner gateway is running"
+            while true;
+            do
+              READY_STATUS=$(kubectl get pods -l app=submariner-gateway -n submariner-operator  -o jsonpath='{.items[0].status.containerStatuses[0].ready}');
+              RUNNING_STATUS=$(kubectl get pods -l=app='cockroachdb' -o jsonpath='{.items[0].status.containerStatuses[0].state.running}');
+              if [ $READY_STATUS = true ] && 
+                 [ ! -z RUNNING_STATUS ]; then
+                  echo "Submariner gateway is running ";
+                  break;
+              else 
+                echo "Waiting for submariner gateway to be ready";
+              fi
+            done;
+
+            echo "Initializing cockroach db"
             initialized=false;
             while true;
             do
@@ -27,8 +55,11 @@ spec:
                 kubectl exec --namespace {{ .Release.Namespace }} -it cockroachdb-0 -- /cockroach/cockroach init --certs-dir=/cockroach/cockroach-certs || true;
                 sleep 20;
                 break;
-              else
-                kubectl get pods -l=app='cockroachdb'
+              elif ([ "$(kubectl get pods -l=app='cockroachdb' -o jsonpath='{.items[0].status.containerStatuses[0].ready}')" = "true" ] && 
+                [ ! -z "$(kubectl get pods -l=app='cockroachdb' -o jsonpath='{.items[0].status.containerStatuses[0].state.running}')"  ]);
+                break;
+              then
+                echo "Waiting for CockroachDb to start"
               fi
             done;
       restartPolicy: Never

@@ -126,6 +126,12 @@ spec:
   selector:
     app: cockroachdb
 ---
+apiVersion: multicluster.x-k8s.io/v1alpha1
+kind: ServiceExport
+metadata:
+  name: cockroachdb
+  namespace: cockroachdb
+---
 apiVersion: policy/v1beta1
 kind: PodDisruptionBudget
 metadata:
@@ -248,10 +254,10 @@ spec:
             start
             --logtostderr
             --certs-dir /cockroach/cockroach-certs
-            --advertise-host $(hostname -f)
+            --advertise-host $(hostname).{{ .Values.clusterName }}.cockroachdb.cockroachdb.svc.clusterset.local
             --http-addr 0.0.0.0
             --join  "{{ template "cockroachdb.joinList" . }}"
-            --locality=region={{ .Release.Namespace }},az=$(cat /etc/cockroach-env/zone),dns=$(hostname -f)
+            --locality=region={{ .Values.region }},az=$(cat /etc/cockroach-env/zone),dns=$(hostname -f)
             --cache $(expr $MEMORY_LIMIT_MIB / 4)MiB
             --max-sql-memory $(expr $MEMORY_LIMIT_MIB / 4)MiB
       # No pre-stop hook is required, a SIGTERM plus some time is all that's

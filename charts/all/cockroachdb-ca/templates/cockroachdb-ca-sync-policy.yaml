@@ -1,0 +1,57 @@
+apiVersion: policy.open-cluster-management.io/v1
+kind: Policy
+metadata:
+  name: cockroachdb-ca-sync-policy
+spec:
+  remediationAction: enforce
+  disabled: false
+  policy-templates:
+    - objectDefinition:
+        apiVersion: policy.open-cluster-management.io/v1
+        kind: ConfigurationPolicy
+        metadata:
+          name: cockroachdb-ca-sync
+          annotations:
+            apps.open-cluster-management.io/deployables: "secret"
+        spec:
+          remediationAction: enforce
+          severity: medium
+          namespaceSelector:
+            include:
+              - default
+          object-templates:
+            - complianceType: mustonlyhave
+              objectDefinition:
+                kind: Secret
+                type: Opaque
+                metadata:
+                  name: cockroachdb.ca
+                  namespace: cockroachdb
+                apiVersion: v1
+                data:
+                  ca.crt: '{{ `{{hub index (lookup "v1" "Secret" "cockroachdb" "cockroachdb.ca").data "ca.crt" hub}}` }}'
+                  ca.key: '{{ `{{hub index (lookup "v1" "Secret" "cockroachdb" "cockroachdb.ca").data "ca.key" hub}}` }}'
+---
+apiVersion: policy.open-cluster-management.io/v1
+kind: PlacementBinding
+metadata:
+  name: cockroachdb-ca-sync-placement-binding
+placementRef:
+  name: cockroachdb-ca-sync-placement
+  kind: PlacementRule
+  apiGroup: apps.open-cluster-management.io
+subjects:
+  - name: cockroachdb-ca-sync-policy
+    kind: Policy
+    apiGroup: policy.open-cluster-management.io
+---
+# We need to run this on any managed cluster but not on the HUB
+apiVersion: apps.open-cluster-management.io/v1
+kind: PlacementRule
+metadata:
+  name: cockroachdb-ca-sync-placement
+spec:
+  # This will go to all clusters
+  clusterConditions:
+    - status: 'True'
+      type: ManagedClusterConditionAvailable

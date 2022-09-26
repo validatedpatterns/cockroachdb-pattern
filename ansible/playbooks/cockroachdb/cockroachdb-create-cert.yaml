@@ -1,0 +1,9 @@
+---
+- name: Create root certificate for cockroack db
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  tasks:
+  - name: Run create secrets task
+    include_role:
+      name: cockroachdb

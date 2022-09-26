@@ -9,7 +9,7 @@ clusterGroup:
   isHubCluster: false
 
   namespaces:
-  - cockroachdb-region-three
+  - cockroachdb
 
   subscriptions:
 
@@ -18,12 +18,12 @@ clusterGroup:
 
   applications:
   - name: cockroachdb
-    namespace: cockroachdb-region-three
+    namespace: cockroachdb
     project: cockroachdb
     path: charts/all/cockroachdb
     overrides:
     - name: provider
-      value: aws
+      value: gcp
     - name: replicas
       value: 3
     - name: vault.clusterSecretStoreName
@@ -36,16 +36,19 @@ clusterGroup:
       value: "1"
     - name: resources.limits.memory
       value: "2Gi"
-    - name: namespaces.0
-      value: cockroachdb-region-one
-    - name: namespaces.1
-      value: cockroachdb-region-two
-    - name: namespaces.2
-      value: cockroachdb-region-three
+    - name: clusters.0
+      value: region-one
+    - name: clusters.1
+      value: region-two
+    - name: clusters.2
+      value: region-three
     - name: region
       value: us-central1
     - name: zone
       value: us-central1-a
+    - name: clusterName
+      value: region-three
+
 
   imperative:
     # NOTE: We *must* use lists and not hashes. As hashes lose ordering once parsed by helm

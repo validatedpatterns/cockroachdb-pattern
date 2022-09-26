@@ -9,7 +9,7 @@ help:
 %:
 	make -f common/Makefile $*
 
-install: deploy ## installs the pattern, inits the vault and loads the secrets
+install: gen-cockroachdb-certs deploy ## installs the pattern, inits the vault and loads the secrets
 	@if grep -v -e '^\s\+#' "values-hub.yaml" | grep -q -e "insecureUnsealVaultInsideCluster:\s\+true"; then \
 	  echo "Skipping 'make vault-init' as we're unsealing the vault from inside the cluster"; \
 	else \
@@ -17,6 +17,9 @@ install: deploy ## installs the pattern, inits the vault and loads the secrets
 	fi
 	make load-secrets
 	echo "Installed"
+
+gen-cockroachdb-certs:
+	scripts/cockroachdb-gen-certs.sh
 
 common-test:
 	make -C common -f common/Makefile test

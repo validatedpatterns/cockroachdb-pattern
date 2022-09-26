@@ -1,12 +1,13 @@
 vault:
   clusterSecretStoreName: vault-backend
-
 provider: aws
 region: us-central1
 zone: us-central1-a
-namespaces:
-  - cockroachdb-aws-cl1
-  - cockroachdb-aws-cl2
+clusterName: region-one
+clusters:
+  - region-one
+  - region-two
+  - region-three
 replicas: 3
 resources:
   requests:

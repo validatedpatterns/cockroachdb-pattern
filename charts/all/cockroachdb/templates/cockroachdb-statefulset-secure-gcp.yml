@@ -1,5 +1,12 @@
 {{- if eq .Values.provider "gcp" }}
 ---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: cockroachdb
+  labels:
+    app: cockroachdb
+---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
@@ -119,6 +126,12 @@ spec:
   selector:
     app: cockroachdb
 ---
+apiVersion: multicluster.x-k8s.io/v1alpha1
+kind: ServiceExport
+metadata:
+  name: cockroachdb
+  namespace: cockroachdb
+---
 apiVersion: policy/v1beta1
 kind: PodDisruptionBudget
 metadata:
@@ -146,8 +159,6 @@ spec:
       labels:
         app: cockroachdb
     spec:
-      securityContext:
-        runAsUser: 0
       serviceAccountName: cockroachdb
       affinity:
         podAntiAffinity:
@@ -161,22 +172,10 @@ spec:
                   values:
                   - cockroachdb
               topologyKey: kubernetes.io/hostname
-      imagePullSecrets:
-      - name: ir-secret
       containers:
       - name: cockroachdb
-        image: "registry.connect.redhat.com/cockroachdb/cockroach:v21.2.2"
+        image: cockroachdb/cockroach:v22.1.6
         imagePullPolicy: IfNotPresent
-    #BEGIN ANSIBLE add resources block
-# customize resources
-        resources:
-          requests:
-            cpu: "2"
-            memory: "5Gi"
-          limits:
-            cpu: "2"
-            memory: "5Gi"
-    #END ANSIBLE add resources block
         ports:
         - containerPort: 26257
           name: grpc
@@ -203,15 +202,11 @@ spec:
           mountPath: /cockroach/cockroach-data
         - name: certs
           mountPath: /cockroach/cockroach-certs
-          readOnly: true
-        envFrom:
-        - configMapRef:
-            name: region-configmap
         env:
-        - name: COCKROACH_CHANNEL
-          value: kubernetes-multiregion
         - name: COCKROACH_SKIP_KEY_PERMISSION_CHECK
           value: "true"
+        - name: COCKROACH_CHANNEL
+          value: kubernetes-multiregion
         - name: GOMAXPROCS
           valueFrom:
             resourceFieldRef:
@@ -232,7 +227,7 @@ spec:
             start
             --logtostderr
             --certs-dir /cockroach/cockroach-certs
-            --advertise-host $(hostname -f)
+            --advertise-host $(hostname).{{ .Values.clusterName }}.cockroachdb.cockroachdb.svc.clusterset.local
             --http-addr 0.0.0.0
             --join  "{{ template "cockroachdb.joinList" . }}"
             --locality=region={{ .Values.region }},zone={{ .Values.zone }},dns=$(hostname -f),cloud={{ .Values.provider }}

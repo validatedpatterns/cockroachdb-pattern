@@ -15,6 +15,7 @@ clusterGroup:
   - region-one
   - region-two
   - region-three
+  - cockroachdb
 
   subscriptions:
     acm:
@@ -28,6 +29,13 @@ clusterGroup:
   - submariner
 
   applications:
+    cockroachdb-ca:
+      name: cockroachdb-ca
+      namespace: cockroachdb
+      project: hub
+      path: charts/all/cockroachdb-ca
+      retry: 15
+    
     acm:
       name: acm
       namespace: open-cluster-management
