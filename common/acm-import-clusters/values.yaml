@@ -1,9 +1,0 @@
-global:
-  pattern: none
-  repoURL: none
-  targetRevision: main
-  vault:
-    secretStoreName: vault-backend
-
-clusterGroup:
-  managedClusterGroups:
