@@ -23,7 +23,7 @@ clusterGroup:
     path: charts/all/cockroachdb
     overrides:
     - name: provider
-      value: aws
+      value: az
     - name: replicas
       value: 3
     - name: vault.clusterSecretStoreName
@@ -37,9 +37,9 @@ clusterGroup:
     - name: resources.limits.memory
       value: "2Gi"
     - name: region
-      value: us-east-2
+      value: eastus
     - name: zone
-      value: us-east-2a
+      value: eastus-1
     - name: clusters.0
       value: region-one
     - name: clusters.1

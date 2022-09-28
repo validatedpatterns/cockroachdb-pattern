@@ -56,14 +56,14 @@ spec:
 apiVersion: external-secrets.io/v1alpha1
 kind: ExternalSecret
 metadata:
-  name: {{ .name }}-gcp-creds
+  name: {{ .name }}-{{ .provider }}-creds
   namespace: {{ .name }}
 spec:
   secretStoreRef:
     name: "{{ $clusterSecretStoreName }}"
     kind: ClusterSecretStore
   target:
-    name: {{ .name }}-gcp-creds
+    name: {{ .name }}-{{ .provider }}-creds
     creationPolicy: Owner
   data:
   - secretKey: osServiceAccount.json
@@ -83,7 +83,7 @@ spec:
   NATTEnable: true
   cableDriver: libreswan
   credentialsSecret:
-    name: {{ .name }}-gcp-creds
+    name: {{ .name }}-{{ .provider }}-creds
 {{- end }}
 {{- end }}
 ---

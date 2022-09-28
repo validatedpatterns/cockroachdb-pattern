@@ -1,4 +1,4 @@
-{{- if eq .Values.provider "gcp" }}
+{{- if or (eq .Values.provider "gcp") (eq .Values.provider "az") }}
 ---
 apiVersion: v1
 kind: ServiceAccount

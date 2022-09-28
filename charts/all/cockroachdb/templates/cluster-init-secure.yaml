@@ -15,7 +15,7 @@ spec:
           - |
             echo "Checking service imports ";
             CLUSTER_COUNT={{ len .Values.clusters }};
-
+            retryCount=0;
             while true;
             do
               TOTAL_IMPORT_COUNT=$(kubectl get serviceimport -A | grep cockroachdb-cockroachdb |  wc -l | xargs);
@@ -23,22 +23,27 @@ spec:
               then
                 break;
               else
-                echo "Waiting for submariner to establish connection"
+                echo "Waiting for submariner to establish connection - $retryCount"
+                retryCount=retryCount+1;
               fi
+              sleep 5;
             done;
 
             echo "Checking submariner gateway is running"
+            retryCount=0;
             while true;
             do
               READY_STATUS=$(kubectl get pods -l app=submariner-gateway -n submariner-operator  -o jsonpath='{.items[0].status.containerStatuses[0].ready}');
               RUNNING_STATUS=$(kubectl get pods -l=app='cockroachdb' -o jsonpath='{.items[0].status.containerStatuses[0].state.running}');
               if [ $READY_STATUS = true ] && 
                  [ ! -z RUNNING_STATUS ]; then
-                  echo "Submariner gateway is running ";
+                  echo "Submariner gateway is running";
                   break;
               else 
-                echo "Waiting for submariner gateway to be ready";
+                echo "Waiting for submariner gateway to be ready - $retryCount";
+                retryCount=retryCount+1;
               fi
+              sleep 5;
             done;
 
             echo "Initializing cockroach db"
@@ -47,7 +52,7 @@ spec:
             do
               kubectl get pods;
               echo "Waiting for Broker to be ready."
-              sleep 5
+              sleep 5;
               if ([ "$(kubectl get pods -l=app='cockroachdb' -o jsonpath='{.items[0].status.containerStatuses[0].ready}')" != "true" ] && 
                 [ ! -z "$(kubectl get pods -l=app='cockroachdb' -o jsonpath='{.items[0].status.containerStatuses[0].state.running}')"  ]);
               then
@@ -62,5 +67,6 @@ spec:
                 echo "Waiting for CockroachDb to start"
               fi
             done;
+            kubectl get pods;
       restartPolicy: Never
   backoffLimit: 4
