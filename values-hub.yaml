@@ -34,7 +34,10 @@ clusterGroup:
       namespace: cockroachdb
       project: hub
       path: charts/all/cockroachdb-ca
-      retry: 15
+      syncPolicy:
+        automated: {}
+        retry:
+          limit: 20
     
     acm:
       name: acm
@@ -52,14 +55,20 @@ clusterGroup:
       namespace: open-cluster-management
       project: hub
       path: common/acm-import-clusters
-      retry: 100
+      syncPolicy:
+        automated: {}
+        retry:
+          limit: 20
 
     submariner:
       name:  submariner
       namespace: submariner
       project: submariner
       path: charts/all/submariner
-      retry: 100
+      syncPolicy:
+        automated: {}
+        retry:
+          limit: 20
 
     vault:
       name: vault

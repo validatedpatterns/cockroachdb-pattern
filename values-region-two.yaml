@@ -21,6 +21,10 @@ clusterGroup:
     namespace: cockroachdb
     project: cockroachdb
     path: charts/all/cockroachdb
+    syncPolicy:
+      automated: {}
+      retry:
+        limit: 20
     overrides:
     - name: provider
       value: az
