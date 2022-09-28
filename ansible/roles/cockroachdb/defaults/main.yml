@@ -1,3 +1,2 @@
-
 cockroach: /usr/local/bin/cockroach
 certs_file_dir: /tmp/cockroachdb-certs
