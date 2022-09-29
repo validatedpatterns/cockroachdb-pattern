@@ -4,7 +4,6 @@
     path: "{{ certs_file_dir }}/files/{{ item }}"
     state: directory
     mode: "0766"
-    recurse: yes
   loop:
     - certs
     - keys
