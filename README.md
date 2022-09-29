@@ -20,6 +20,24 @@ for additional context and installation instructions.
 | cluster2 | 10.132.0.0/14 | 172.31.0.0/16 |
 | cluster3 | 10.140.0.0/14 | 172.32.0.0/16 |
 
+ACM does not support configuring Submariner add-on for OpenShift clusters deployed in Azure cloud. Additonal steps are required to configure Submariner on Azure cluster. Before deploying cockroachdb-pattern ensure the following steps have been completed for Azure clusters.
+
+### Prepare Azure Clusters for Submariner
+
+Submariner Gateway nodes need to be able to accept traffic over UDP ports (4500 and 4490 by default). Submariner also uses UDP port 4800 to encapsulate traffic from the worker and master nodes to the Gateway nodes, and TCP port 8080 to retrieve metrics from the Gateway nodes. Additionally, the default OpenShift deployment does not allow assigning an elastic public IP to existing worker nodes, which may be necessary on one end of the tunnel connection.
+
+subctl cloud prepare is a command designed to update your OpenShift installer provisioned infrastructure for Submariner deployments, handling the requirements specified above.
+
+Run the command for cluster1:
+
+```sh
+az ad sp create-for-rbac --sdk-auth > my.auth
+export KUBECONFIG=cluster1/auth/kubeconfig
+subctl cloud prepare azure --ocp-metadata cluster1/metadata.json --auth-file my.auth
+```
+
+For more information on how to prepare Azure OpenShift cluster for Submariner deployment, refer to the [submariner](https://submariner.io/getting-started/quickstart/openshift/azure/#prepare-azure-clusters-for-submariner) documentation.
+
 If you do not have a running Red Hat OpenShift cluster, you can start one on a
 public or private cloud by using [Red Hat's cloud
 service](https://console.redhat.com/openshift/create).
