@@ -37,7 +37,7 @@ clusterGroup:
       syncPolicy:
         automated: {}
         retry:
-          limit: 20
+          limit: 50
     
     acm:
       name: acm
@@ -54,11 +54,11 @@ clusterGroup:
       name:  acm-import-clusters
       namespace: open-cluster-management
       project: hub
-      path: common/acm-import-clusters
+      path: charts/all/acm-import-clusters
       syncPolicy:
         automated: {}
         retry:
-          limit: 20
+          limit: 50
 
     submariner:
       name:  submariner
@@ -68,7 +68,7 @@ clusterGroup:
       syncPolicy:
         automated: {}
         retry:
-          limit: 20
+          limit: 50
 
     vault:
       name: vault

@@ -1,0 +1,10 @@
+global:
+  pattern: kafka-pattern
+  vault:
+    secretStoreName: vault-backend
+
+clusterGroup:
+  name: hub
+  submarinerAddon: true
+  managedClusterGroups:
+ 
