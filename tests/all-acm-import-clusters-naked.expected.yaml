@@ -1,0 +1,206 @@
+---
+# Source: acm-import-clusters/templates/clusters.yaml
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: clusterrole1
+rules:
+  - apiGroups: ["cluster.open-cluster-management.io"]
+    resources: ["managedclustersets/join"]
+    resourceNames: ["hub"]
+    verbs: ["create"]
+---
+# Source: acm-import-clusters/templates/clusters.yaml
+apiVersion: external-secrets.io/v1alpha1
+kind: ExternalSecret
+metadata:
+  name: auto-import-secret
+  namespace: region-one
+spec:
+  secretStoreRef:
+    name: "vault-backend"
+    kind: ClusterSecretStore
+  target:
+    name: auto-import-secret
+    creationPolicy: Owner
+  data:
+  - secretKey: token
+    remoteRef:
+      key: secret/hub/region-one
+      property: token
+  - secretKey: server
+    remoteRef:
+      key: secret/hub/region-one
+      property: server
+---
+# Source: acm-import-clusters/templates/clusters.yaml
+apiVersion: external-secrets.io/v1alpha1
+kind: ExternalSecret
+metadata:
+  name: auto-import-secret
+  namespace: region-three
+spec:
+  secretStoreRef:
+    name: "vault-backend"
+    kind: ClusterSecretStore
+  target:
+    name: auto-import-secret
+    creationPolicy: Owner
+  data:
+  - secretKey: token
+    remoteRef:
+      key: secret/hub/region-three
+      property: token
+  - secretKey: server
+    remoteRef:
+      key: secret/hub/region-three
+      property: server
+---
+# Source: acm-import-clusters/templates/clusters.yaml
+apiVersion: external-secrets.io/v1alpha1
+kind: ExternalSecret
+metadata:
+  name: auto-import-secret
+  namespace: region-two
+spec:
+  secretStoreRef:
+    name: "vault-backend"
+    kind: ClusterSecretStore
+  target:
+    name: auto-import-secret
+    creationPolicy: Owner
+  data:
+  - secretKey: token
+    remoteRef:
+      key: secret/hub/region-two
+      property: token
+  - secretKey: server
+    remoteRef:
+      key: secret/hub/region-two
+      property: server
+---
+# Source: acm-import-clusters/templates/clusters.yaml
+apiVersion: agent.open-cluster-management.io/v1
+kind: KlusterletAddonConfig
+metadata:
+  name: region-one
+  namespace: region-one
+spec:
+  clusterName: region-one
+  clusterNamespace: region-one
+  clusterLabels:
+    name: region-one
+    cloud: auto-detect
+    vendor: auto-detect
+    clusterGroup: region-one
+    cluster.open-cluster-management.io/clusterset: "hub"
+  applicationManager:
+    enabled: true
+  policyController:
+    enabled: true
+  searchCollector:
+    enabled: true
+  certPolicyController:
+    enabled: true
+  iamPolicyController:
+    enabled: true
+---
+# Source: acm-import-clusters/templates/clusters.yaml
+apiVersion: agent.open-cluster-management.io/v1
+kind: KlusterletAddonConfig
+metadata:
+  name: region-three
+  namespace: region-three
+spec:
+  clusterName: region-three
+  clusterNamespace: region-three
+  clusterLabels:
+    name: region-three
+    cloud: auto-detect
+    vendor: auto-detect
+    clusterGroup: region-three
+    cluster.open-cluster-management.io/clusterset: "hub"
+  applicationManager:
+    enabled: true
+  policyController:
+    enabled: true
+  searchCollector:
+    enabled: true
+  certPolicyController:
+    enabled: true
+  iamPolicyController:
+    enabled: true
+---
+# Source: acm-import-clusters/templates/clusters.yaml
+apiVersion: agent.open-cluster-management.io/v1
+kind: KlusterletAddonConfig
+metadata:
+  name: region-two
+  namespace: region-two
+spec:
+  clusterName: region-two
+  clusterNamespace: region-two
+  clusterLabels:
+    name: region-two
+    cloud: auto-detect
+    vendor: auto-detect
+    clusterGroup: region-two
+    cluster.open-cluster-management.io/clusterset: "hub"
+  applicationManager:
+    enabled: true
+  policyController:
+    enabled: true
+  searchCollector:
+    enabled: true
+  certPolicyController:
+    enabled: true
+  iamPolicyController:
+    enabled: true
+---
+# Source: acm-import-clusters/templates/clusters.yaml
+apiVersion: cluster.open-cluster-management.io/v1
+kind: ManagedCluster
+metadata:
+  name: region-one
+  labels:
+    name: region-one
+    cloud: auto-detect
+    vendor: auto-detect
+    clusterGroup: region-one
+    cluster.open-cluster-management.io/clusterset: "hub"
+spec:
+  hubAcceptsClient: true
+---
+# Source: acm-import-clusters/templates/clusters.yaml
+apiVersion: cluster.open-cluster-management.io/v1
+kind: ManagedCluster
+metadata:
+  name: region-three
+  labels:
+    name: region-three
+    cloud: auto-detect
+    vendor: auto-detect
+    clusterGroup: region-three
+    cluster.open-cluster-management.io/clusterset: "hub"
+spec:
+  hubAcceptsClient: true
+---
+# Source: acm-import-clusters/templates/clusters.yaml
+apiVersion: cluster.open-cluster-management.io/v1
+kind: ManagedCluster
+metadata:
+  name: region-two
+  labels:
+    name: region-two
+    cloud: auto-detect
+    vendor: auto-detect
+    clusterGroup: region-two
+    cluster.open-cluster-management.io/clusterset: "hub"
+spec:
+  hubAcceptsClient: true
+---
+# Source: acm-import-clusters/templates/clusters.yaml
+apiVersion: cluster.open-cluster-management.io/v1alpha1
+kind: ManagedClusterSet
+metadata:
+  name: hub
