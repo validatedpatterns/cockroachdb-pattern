@@ -9,20 +9,50 @@ clusterGroup:
   isHubCluster: false
 
   namespaces:
-    - config-demo
+  - cockroachdb
 
   subscriptions:
 
   projects:
-    - config-demo
+  - cockroachdb
 
   applications:
-    config-demo:
-      name: config-demo
-      namespace: config-demo
-      project: config-demo
-      path: charts/all/config-demo
-
+  - name: cockroachdb
+    namespace: cockroachdb
+    project: cockroachdb
+    path: charts/all/cockroachdb
+    syncPolicy:
+      automated: {}
+      retry:
+        limit: 50
+    overrides:
+    - name: provider
+      value: aws
+    - name: replicas
+      value: 3
+    - name: vault.clusterSecretStoreName
+      value: vault-backend
+    - name: resources.requests.cpu
+      value: "1"
+    - name: resources.requests.memory
+      value: "2Gi"
+    - name: resources.limits.cpu
+      value: "1"
+    - name: resources.limits.memory
+      value: "2Gi"
+    - name: region
+      value: us-east-2
+    - name: zone
+      value: us-east-2a
+    - name: clusters.0
+      value: region-one
+    - name: clusters.1
+      value: region-two
+    - name: clusters.2
+      value: region-three
+    - name: clusterName
+      value: region-one
+    
 
   imperative:
     # NOTE: We *must* use lists and not hashes. As hashes lose ordering once parsed by helm

@@ -1,0 +1,14 @@
+---
+- name: Create directories needed for cockroachdb certs
+  ansible.builtin.file:
+    path: "{{ certs_file_dir }}/files/{{ item }}"
+    state: directory
+    mode: "0766"
+  loop:
+    - certs
+    - keys
+
+- name: Create the CA certificate and key pair
+  ansible.builtin.command: "{{ cockroach }} cert create-ca --certs-dir={{ certs_file_dir }}/files/certs/ --ca-key={{ certs_file_dir }}/files/keys/ca.key"
+  args:
+    creates: "{{ certs_file_dir }}/files/certs/ca.crt"

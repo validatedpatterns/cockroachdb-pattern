@@ -1,0 +1,6 @@
+global:
+  vault:
+    secretStoreName: vault-backend
+
+clusterGroup:
+  name: hub

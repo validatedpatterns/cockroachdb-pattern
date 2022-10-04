@@ -1,0 +1,205 @@
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: create-certs-service-account
+  namespace:  cockroachdb
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: create-certs-role
+  namespace: cockroachdb
+rules:
+  - apiGroups:
+      - ""
+      - apps
+      - autoscaling
+      - batch
+      - extensions
+      - policy
+      - rbac.authorization.k8s.io
+      - multicluster.x-k8s.io
+    resources:
+      - secrets
+      - pods
+      - serviceaccounts
+      - serviceimports
+      - Role
+      - RoleBinding
+      - nodes
+      - configmaps
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+  - apiGroups: [""]
+    resources: ["pods/exec"]
+    verbs: ["create"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: create-certs-rolebinding
+  namespace: cockroachdb
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: create-certs-role
+subjects:
+- namespace: cockroachdb
+  kind: ServiceAccount
+  name: create-certs-service-account
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: create-certs-role
+rules:
+- apiGroups:
+  - multicluster.x-k8s.io
+  - ""
+  resources:
+  - serviceimports
+  - pods
+  verbs:
+  - create
+  - get
+  - watch
+  - list
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: create-certs-rolebinding
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: create-certs-role
+subjects:
+- kind: ServiceAccount
+  name: create-certs-service-account
+  namespace: cockroachdb
+- kind: ServiceAccount
+  name: create-certs-service-account
+  namespace: submariner-operator
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: create-certs
+spec:
+  serviceAccountName: create-certs-service-account
+  initContainers:
+  - name: create-ca-cert
+    terminationMessagePath: /dev/termination-log
+    resources: {}
+    imagePullPolicy: Always
+    volumeMounts:
+      - name: certs-gen-volume
+        mountPath: /var/run/secrets/certs
+      - name: certs-volume
+        mountPath: /var/run/secrets/ca-crt
+      - name: my-safe-directory-volume
+        mountPath: /var/run/secrets/my-safe-directory
+    terminationMessagePolicy: File
+    image: 'cockroachdb/cockroach'
+    command:
+      - sh
+      - -c
+      - |
+        echo " certs directory "
+        ls -al /var/run/secrets/certs
+        echo " safe directory "
+        ls -al /var/run/secrets/my-safe-directory
+        cp /var/run/secrets/ca-crt/ca.crt /var/run/secrets/certs/ca.crt
+        cockroach cert create-client root --certs-dir=/var/run/secrets/certs --ca-key=/var/run/secrets/my-safe-directory/ca.key
+        chmod 640 /var/run/secrets/certs/*.*
+        echo " certs directory "
+        ls -al /var/run/secrets/certs
+        echo " safe directory "
+        ls -al /var/run/secrets/my-safe-directory
+        echo "Finished creating certs"
+  
+  - name: create-ca-secret
+    terminationMessagePath: /dev/termination-log
+    resources: {}
+    imagePullPolicy: Always
+    volumeMounts:
+      - name: certs-gen-volume
+        mountPath: /var/run/secrets/certs
+      - name: certs-volume
+        mountPath: /var/run/secrets/ca-crt
+      - name: my-safe-directory-volume
+        mountPath: /var/run/secrets/my-safe-directory
+    terminationMessagePolicy: File
+    image: 'openshift/origin-cli'
+    command:
+      - sh
+      - -c
+      - |
+        oc delete secret cockroachdb.client.root || true
+        oc delete secret cockroachdb.node || true
+        oc create secret generic cockroachdb.client.root --from-file=/var/run/secrets/certs --namespace cockroachdb
+
+  - name: create-node-cert
+    terminationMessagePath: /dev/termination-log
+    resources: {}
+    imagePullPolicy: Always
+    volumeMounts:
+      - name: certs-gen-volume
+        mountPath: /var/run/secrets/certs
+      - name: certs-volume
+        mountPath: /var/run/secrets/ca-crt
+      - name: my-safe-directory-volume
+        mountPath: /var/run/secrets/my-safe-directory
+    terminationMessagePolicy: File
+    image: 'cockroachdb/cockroach:v22.1.6'
+    command:
+      - sh
+      - -c
+      - |
+        cockroach cert create-node localhost 127.0.0.1 cockroachdb-public cockroachdb-public.cockroachdb cockroachdb-public.cockroachdb.svc.cluster.local "*.{{ .Values.clusterName }}.cockroachdb.cockroachdb.svc.clusterset.local" "*.cockroachdb.cockroachdb.svc.clusterset.local" "*.cockroachdb" "*.cockroachdb.cockroachdb" "*.cockroachdb.cockroachdb.svc.cluster.local" --certs-dir=/var/run/secrets/certs --ca-key=/var/run/secrets/my-safe-directory/ca.key
+  
+  - name: create-node-secret
+    terminationMessagePath: /dev/termination-log
+    resources: {}
+    imagePullPolicy: Always
+    volumeMounts:
+      - name: certs-gen-volume
+        mountPath: /var/run/secrets/certs
+      - name: certs-volume
+        mountPath: /var/run/secrets/ca-crt
+      - name: my-safe-directory-volume
+        mountPath: /var/run/secrets/my-safe-directory
+    terminationMessagePolicy: File
+    image: 'openshift/origin-cli'
+    command:
+      - sh
+      - -c
+      - |
+        oc create secret generic cockroachdb.node --from-file=/var/run/secrets/certs --namespace cockroachdb
+  restartPolicy: Never 
+  containers:
+  - command:
+      - sh
+      - -c
+      - |
+        sleep 20
+    image: 'openshift/origin-cli'
+    name: create-certs
+  terminationGracePeriodSeconds: 5
+  volumes:
+    - name: certs-gen-volume
+      emptyDir: {}
+    - name: certs-volume
+      secret:
+        secretName: cockroachdb.ca
+        defaultMode: 0666
+        items: 
+          - key: ca.crt
+            path: ./ca.crt
+    - name: my-safe-directory-volume
+      secret:
+        secretName: cockroachdb.ca
+        defaultMode: 0666
+        items: 
+          - key: ca.key
+            path: ./ca.key

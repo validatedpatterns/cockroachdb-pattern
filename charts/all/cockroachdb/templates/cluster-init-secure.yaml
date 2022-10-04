@@ -1,0 +1,72 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: init-cockroachdb
+spec:
+  template:
+    spec:
+      serviceAccountName: create-certs-service-account
+      containers:
+      - name: init-cockroachdb
+        image: 'bitnami/kubectl'
+        command:
+          - sh
+          - -c
+          - |
+            echo "Checking service imports ";
+            CLUSTER_COUNT={{ len .Values.clusters }};
+            retryCount=0;
+            while true;
+            do
+              TOTAL_IMPORT_COUNT=$(kubectl get serviceimport -A | grep cockroachdb-cockroachdb |  wc -l | xargs);
+              if [ $CLUSTER_COUNT -eq $TOTAL_IMPORT_COUNT ] 
+              then
+                break;
+              else
+                echo "Waiting for submariner to establish connection - $retryCount"
+                retryCount=retryCount+1;
+              fi
+              sleep 5;
+            done;
+
+            echo "Checking submariner gateway is running"
+            retryCount=0;
+            while true;
+            do
+              READY_STATUS=$(kubectl get pods -l app=submariner-gateway -n submariner-operator  -o jsonpath='{.items[0].status.containerStatuses[0].ready}');
+              RUNNING_STATUS=$(kubectl get pods -l=app='cockroachdb' -o jsonpath='{.items[0].status.containerStatuses[0].state.running}');
+              if [ $READY_STATUS = true ] && 
+                 [ ! -z RUNNING_STATUS ]; then
+                  echo "Submariner gateway is running";
+                  break;
+              else 
+                echo "Waiting for submariner gateway to be ready - $retryCount";
+                retryCount=retryCount+1;
+              fi
+              sleep 5;
+            done;
+
+            echo "Initializing cockroach db"
+            initialized=false;
+            while true;
+            do
+              kubectl get pods;
+              echo "Waiting for Broker to be ready."
+              sleep 5;
+              if ([ "$(kubectl get pods -l=app='cockroachdb' -o jsonpath='{.items[0].status.containerStatuses[0].ready}')" != "true" ] && 
+                [ ! -z "$(kubectl get pods -l=app='cockroachdb' -o jsonpath='{.items[0].status.containerStatuses[0].state.running}')"  ]);
+              then
+                echo "Initializing cockroach db .. "
+                kubectl exec --namespace {{ .Release.Namespace }} -it cockroachdb-0 -- /cockroach/cockroach init --certs-dir=/cockroach/cockroach-certs || true;
+                sleep 20;
+                break;
+              elif ([ "$(kubectl get pods -l=app='cockroachdb' -o jsonpath='{.items[0].status.containerStatuses[0].ready}')" = "true" ] && 
+                [ ! -z "$(kubectl get pods -l=app='cockroachdb' -o jsonpath='{.items[0].status.containerStatuses[0].state.running}')"  ]);
+                break;
+              then
+                echo "Waiting for CockroachDb to start"
+              fi
+            done;
+            kubectl get pods;
+      restartPolicy: Never
+  backoffLimit: 4

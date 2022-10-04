@@ -1,0 +1,43 @@
+global:
+  pattern: cockroachdb-pattern
+  vault:
+    secretStoreName: vault-backend
+
+clusterGroup:
+  name: hub
+  autoImport: true
+  isHubCluster: true
+  managedClusterGroups:
+    region-one:
+      name: region-one
+      provider: aws
+      submariner:
+        instanceType: m5.xlarge
+      helmOverrides:
+      - name: clusterGroup.isHubCluster
+        value: false
+      clusterSelector:
+        matchLabels:
+          clusterGroup: region-one
+    region-two:
+      name: region-two
+      provider: az
+      submariner:
+        instanceType: Standard_D4s_V3
+      helmOverrides:
+      - name: clusterGroup.isHubCluster
+        value: false
+      clusterSelector:
+        matchLabels:
+          clusterGroup: region-two
+    region-three:
+      name: region-three
+      provider: gcp
+      submariner:
+        instanceType: n2-standard-8
+      helmOverrides:
+      - name: clusterGroup.isHubCluster
+        value: false
+      clusterSelector:
+        matchLabels:
+          clusterGroup: region-three

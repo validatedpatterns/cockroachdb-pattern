@@ -1,0 +1,22 @@
+vault:
+  clusterSecretStoreName: vault-backend
+provider: aws
+region: us-central1
+zone: us-central1-a
+clusterName: region-one
+clusters:
+  - region-one
+  - region-two
+  - region-three
+replicas: 3
+resources:
+  requests:
+    cpu: "2"
+    memory: "8Gi"
+  limits:
+    cpu: "2"
+    memory: "8Gi"
+volumeClaimTemplatesStorage: 100Gi
+
+
+

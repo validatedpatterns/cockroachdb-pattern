@@ -1,0 +1,616 @@
+---
+# Source: cockroachdb/templates/cockroachdb-statefulset-secure-eks.yaml
+apiVersion: policy/v1beta1
+kind: PodDisruptionBudget
+metadata:
+  name: cockroachdb-budget
+  labels:
+    app: cockroachdb
+spec:
+  selector:
+    matchLabels:
+      app: cockroachdb
+  maxUnavailable: 1
+---
+# Source: cockroachdb/templates/cockroachdb-statefulset-secure-eks.yaml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: cockroachdb
+  labels:
+    app: cockroachdb
+---
+# Source: cockroachdb/templates/create-certs-pod.yaml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: create-certs-service-account
+  namespace:  cockroachdb
+---
+# Source: cockroachdb/templates/cockroachdb-statefulset-secure-eks.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: cockroachdb
+  labels:
+    app: cockroachdb
+rules:
+- apiGroups:
+  - certificates.k8s.io
+  resources:
+  - certificatesigningrequests
+  verbs:
+  - create
+  - get
+  - watch
+---
+# Source: cockroachdb/templates/create-certs-pod.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: create-certs-role
+rules:
+- apiGroups:
+  - multicluster.x-k8s.io
+  - ""
+  resources:
+  - serviceimports
+  - pods
+  verbs:
+  - create
+  - get
+  - watch
+  - list
+---
+# Source: cockroachdb/templates/cockroachdb-statefulset-secure-eks.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: cockroachdb
+  labels:
+    app: cockroachdb
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cockroachdb
+subjects:
+- kind: ServiceAccount
+  name: cockroachdb
+  namespace: default
+---
+# Source: cockroachdb/templates/create-certs-pod.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: create-certs-rolebinding
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: create-certs-role
+subjects:
+- kind: ServiceAccount
+  name: create-certs-service-account
+  namespace: cockroachdb
+- kind: ServiceAccount
+  name: create-certs-service-account
+  namespace: submariner-operator
+---
+# Source: cockroachdb/templates/cockroachdb-statefulset-secure-eks.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: cockroachdb
+  labels:
+    app: cockroachdb
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - secrets
+  verbs:
+  - create
+  - get
+---
+# Source: cockroachdb/templates/create-certs-pod.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: create-certs-role
+  namespace: cockroachdb
+rules:
+  - apiGroups:
+      - ""
+      - apps
+      - autoscaling
+      - batch
+      - extensions
+      - policy
+      - rbac.authorization.k8s.io
+      - multicluster.x-k8s.io
+    resources:
+      - secrets
+      - pods
+      - serviceaccounts
+      - serviceimports
+      - Role
+      - RoleBinding
+      - nodes
+      - configmaps
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+  - apiGroups: [""]
+    resources: ["pods/exec"]
+    verbs: ["create"]
+---
+# Source: cockroachdb/templates/cockroachdb-statefulset-secure-eks.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: cockroachdb
+  labels:
+    app: cockroachdb
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: cockroachdb
+subjects:
+- kind: ServiceAccount
+  name: cockroachdb
+  namespace: default
+---
+# Source: cockroachdb/templates/create-certs-pod.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: create-certs-rolebinding
+  namespace: cockroachdb
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: create-certs-role
+subjects:
+- namespace: cockroachdb
+  kind: ServiceAccount
+  name: create-certs-service-account
+---
+# Source: cockroachdb/templates/cockroachdb-statefulset-secure-eks.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  # This service is meant to be used by clients of the database. It exposes a ClusterIP that will
+  # automatically load balance connections to the different database pods.
+  name: cockroachdb-public
+  labels:
+    app: cockroachdb
+spec:
+  ports:
+  # The main port, served by gRPC, serves Postgres-flavor SQL, internode
+  # traffic and the cli.
+  - port: 26257
+    targetPort: 26257
+    name: grpc
+  # The secondary port serves the UI as well as health and debug endpoints.
+  - port: 8080
+    targetPort: 8080
+    name: http
+  selector:
+    app: cockroachdb
+---
+# Source: cockroachdb/templates/cockroachdb-statefulset-secure-eks.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  # This service only exists to create DNS entries for each pod in the stateful
+  # set such that they can resolve each other's IP addresses. It does not
+  # create a load-balanced ClusterIP and should not be used directly by clients
+  # in most circumstances.
+  name: cockroachdb
+  labels:
+    app: cockroachdb
+  annotations:
+    # Use this annotation in addition to the actual publishNotReadyAddresses
+    # field below because the annotation will stop being respected soon but the
+    # field is broken in some versions of Kubernetes:
+    # https://github.com/kubernetes/kubernetes/issues/58662
+    service.alpha.kubernetes.io/tolerate-unready-endpoints: "true"
+    # Enable automatic monitoring of all instances when Prometheus is running in the cluster.
+    prometheus.io/scrape: "true"
+    prometheus.io/path: "_status/vars"
+    prometheus.io/port: "8080"
+spec:
+  ports:
+  - port: 26257
+    targetPort: 26257
+    name: grpc
+  - port: 8080
+    targetPort: 8080
+    name: http
+  # We want all pods in the StatefulSet to have their addresses published for
+  # the sake of the other CockroachDB pods even before they're ready, since they
+  # have to be able to talk to each other in order to become ready.
+  publishNotReadyAddresses: true
+  clusterIP: None
+  selector:
+    app: cockroachdb
+---
+# Source: cockroachdb/templates/client-secure.yaml
+# Generated file, DO NOT EDIT. Source: cloud/kubernetes/templates/multiregion/client-secure.yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: cockroachdb-client-secure
+  labels:
+    app: cockroachdb-client
+spec:
+  serviceAccountName: cockroachdb
+  containers:
+  - name: cockroachdb-client
+    image: cockroachdb/cockroach:v22.1.6
+    imagePullPolicy: IfNotPresent
+    volumeMounts:
+    - name: client-certs
+      mountPath: /cockroach-certs
+    # Keep a pod open indefinitely so kubectl exec can be used to get a shell to it
+    # and run cockroach client commands, such as cockroach sql, cockroach node status, etc.
+    command:
+    - sleep
+    - "2147483648" # 2^31
+  # This pod isn't doing anything important, so don't bother waiting to terminate it.
+  terminationGracePeriodSeconds: 0
+  volumes:
+  - name: client-certs
+    secret:
+      secretName: cockroachdb.client.root
+      defaultMode: 256
+---
+# Source: cockroachdb/templates/create-certs-pod.yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: create-certs
+spec:
+  serviceAccountName: create-certs-service-account
+  initContainers:
+  - name: create-ca-cert
+    terminationMessagePath: /dev/termination-log
+    resources: {}
+    imagePullPolicy: Always
+    volumeMounts:
+      - name: certs-gen-volume
+        mountPath: /var/run/secrets/certs
+      - name: certs-volume
+        mountPath: /var/run/secrets/ca-crt
+      - name: my-safe-directory-volume
+        mountPath: /var/run/secrets/my-safe-directory
+    terminationMessagePolicy: File
+    image: 'cockroachdb/cockroach'
+    command:
+      - sh
+      - -c
+      - |
+        echo " certs directory "
+        ls -al /var/run/secrets/certs
+        echo " safe directory "
+        ls -al /var/run/secrets/my-safe-directory
+        cp /var/run/secrets/ca-crt/ca.crt /var/run/secrets/certs/ca.crt
+        cockroach cert create-client root --certs-dir=/var/run/secrets/certs --ca-key=/var/run/secrets/my-safe-directory/ca.key
+        chmod 640 /var/run/secrets/certs/*.*
+        echo " certs directory "
+        ls -al /var/run/secrets/certs
+        echo " safe directory "
+        ls -al /var/run/secrets/my-safe-directory
+        echo "Finished creating certs"
+  
+  - name: create-ca-secret
+    terminationMessagePath: /dev/termination-log
+    resources: {}
+    imagePullPolicy: Always
+    volumeMounts:
+      - name: certs-gen-volume
+        mountPath: /var/run/secrets/certs
+      - name: certs-volume
+        mountPath: /var/run/secrets/ca-crt
+      - name: my-safe-directory-volume
+        mountPath: /var/run/secrets/my-safe-directory
+    terminationMessagePolicy: File
+    image: 'openshift/origin-cli'
+    command:
+      - sh
+      - -c
+      - |
+        oc delete secret cockroachdb.client.root || true
+        oc delete secret cockroachdb.node || true
+        oc create secret generic cockroachdb.client.root --from-file=/var/run/secrets/certs --namespace cockroachdb
+
+  - name: create-node-cert
+    terminationMessagePath: /dev/termination-log
+    resources: {}
+    imagePullPolicy: Always
+    volumeMounts:
+      - name: certs-gen-volume
+        mountPath: /var/run/secrets/certs
+      - name: certs-volume
+        mountPath: /var/run/secrets/ca-crt
+      - name: my-safe-directory-volume
+        mountPath: /var/run/secrets/my-safe-directory
+    terminationMessagePolicy: File
+    image: 'cockroachdb/cockroach:v22.1.6'
+    command:
+      - sh
+      - -c
+      - |
+        cockroach cert create-node localhost 127.0.0.1 cockroachdb-public cockroachdb-public.cockroachdb cockroachdb-public.cockroachdb.svc.cluster.local "*.region-one.cockroachdb.cockroachdb.svc.clusterset.local" "*.cockroachdb.cockroachdb.svc.clusterset.local" "*.cockroachdb" "*.cockroachdb.cockroachdb" "*.cockroachdb.cockroachdb.svc.cluster.local" --certs-dir=/var/run/secrets/certs --ca-key=/var/run/secrets/my-safe-directory/ca.key
+  
+  - name: create-node-secret
+    terminationMessagePath: /dev/termination-log
+    resources: {}
+    imagePullPolicy: Always
+    volumeMounts:
+      - name: certs-gen-volume
+        mountPath: /var/run/secrets/certs
+      - name: certs-volume
+        mountPath: /var/run/secrets/ca-crt
+      - name: my-safe-directory-volume
+        mountPath: /var/run/secrets/my-safe-directory
+    terminationMessagePolicy: File
+    image: 'openshift/origin-cli'
+    command:
+      - sh
+      - -c
+      - |
+        oc create secret generic cockroachdb.node --from-file=/var/run/secrets/certs --namespace cockroachdb
+  restartPolicy: Never 
+  containers:
+  - command:
+      - sh
+      - -c
+      - |
+        sleep 20
+    image: 'openshift/origin-cli'
+    name: create-certs
+  terminationGracePeriodSeconds: 5
+  volumes:
+    - name: certs-gen-volume
+      emptyDir: {}
+    - name: certs-volume
+      secret:
+        secretName: cockroachdb.ca
+        defaultMode: 0666
+        items: 
+          - key: ca.crt
+            path: ./ca.crt
+    - name: my-safe-directory-volume
+      secret:
+        secretName: cockroachdb.ca
+        defaultMode: 0666
+        items: 
+          - key: ca.key
+            path: ./ca.key
+---
+# Source: cockroachdb/templates/cockroachdb-statefulset-secure-eks.yaml
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: cockroachdb
+  # TODO: Use this field to specify a namespace other than "default" in which to deploy CockroachDB (e.g., us-east-1).
+  namespace: default
+spec:
+  serviceName: "cockroachdb"
+  replicas: 3
+  selector:
+    matchLabels:
+      app: cockroachdb
+  template:
+    metadata:
+      labels:
+        app: cockroachdb
+    spec:
+      serviceAccountName: cockroachdb
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: app
+                  operator: In
+                  values:
+                  - cockroachdb
+              topologyKey: kubernetes.io/hostname
+      # This init container is used to determine the availability zones of the Cockroach pods. The AZs are used to define --locality when starting Cockroach nodes.
+      initContainers:
+      - name: locality-container
+        image: byrnedo/alpine-curl:0.1
+        imagePullPolicy: IfNotPresent
+        resources: {}
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+        volumeMounts:
+        - mountPath: /etc/cockroach-env
+          name: cockroach-env
+        command:
+        - sh
+        - -ecx
+        - echo "aws-$(curl http://169.254.169.254/latest/meta-data/placement/availability-zone/)"
+          > /etc/cockroach-env/zone
+
+      containers:
+      - name: cockroachdb
+        image: cockroachdb/cockroach:v22.1.6
+        imagePullPolicy: IfNotPresent
+        # TODO: Change these to appropriate values for the hardware that you're running. You can see
+        # the resources that can be allocated on each of your Kubernetes nodes by running:
+        #   kubectl describe nodes
+        # Note that requests and limits should have identical values.
+        resources:
+          limits:
+            cpu: "2"
+            memory: 8Gi
+          requests:
+            cpu: "2"
+            memory: 8Gi
+        ports:
+        - containerPort: 26257
+          name: grpc
+        - containerPort: 8080
+          name: http
+# We recommend that you do not configure a liveness probe on a production environment, as this can impact the availability of production databases.
+#       livenessProbe:
+#         httpGet:
+#           path: "/health"
+#           port: http
+#           scheme: HTTPS
+#         initialDelaySeconds: 30
+#         periodSeconds: 5
+        readinessProbe:
+          httpGet:
+            path: "/health?ready=1"
+            port: http
+            scheme: HTTPS
+          initialDelaySeconds: 10
+          periodSeconds: 5
+          failureThreshold: 2
+        volumeMounts:
+        - name: datadir
+          mountPath: /cockroach/cockroach-data
+        - name: certs
+          mountPath: /cockroach/cockroach-certs
+        - name: cockroach-env
+          mountPath: /etc/cockroach-env
+        env:
+        - name: COCKROACH_SKIP_KEY_PERMISSION_CHECK
+          value: "true"
+        - name: COCKROACH_CHANNEL
+          value: kubernetes-multiregion
+        - name: GOMAXPROCS
+          valueFrom:
+            resourceFieldRef:
+              resource: limits.cpu
+              divisor: "1"
+        - name: MEMORY_LIMIT_MIB
+          valueFrom:
+            resourceFieldRef:
+              resource: limits.memory
+              divisor: "1Mi"
+        command:
+          - "/bin/bash"
+          - "-ecx"
+          # The use of qualified `hostname -f` is crucial:
+          # Other nodes aren't able to look up the unqualified hostname.
+          - exec
+            /cockroach/cockroach
+            start
+            --logtostderr
+            --certs-dir /cockroach/cockroach-certs
+            --advertise-host $(hostname).region-one.cockroachdb.cockroachdb.svc.clusterset.local
+            --http-addr 0.0.0.0
+            --join  "cockroachdb-0.region-one.cockroachdb.cockroachdb.svc.clusterset.local,cockroachdb-0.region-two.cockroachdb.cockroachdb.svc.clusterset.local,cockroachdb-0.region-three.cockroachdb.cockroachdb.svc.clusterset.local,cockroachdb-1.region-one.cockroachdb.cockroachdb.svc.clusterset.local,cockroachdb-1.region-two.cockroachdb.cockroachdb.svc.clusterset.local,cockroachdb-1.region-three.cockroachdb.cockroachdb.svc.clusterset.local,cockroachdb-2.region-one.cockroachdb.cockroachdb.svc.clusterset.local,cockroachdb-2.region-two.cockroachdb.cockroachdb.svc.clusterset.local,cockroachdb-2.region-three.cockroachdb.cockroachdb.svc.clusterset.local"
+            --locality=region=us-central1,az=$(cat /etc/cockroach-env/zone),dns=$(hostname -f)
+            --cache $(expr $MEMORY_LIMIT_MIB / 4)MiB
+            --max-sql-memory $(expr $MEMORY_LIMIT_MIB / 4)MiB
+      # No pre-stop hook is required, a SIGTERM plus some time is all that's
+      # needed for graceful shutdown of a node.
+      terminationGracePeriodSeconds: 60
+      volumes:
+      - name: datadir
+        persistentVolumeClaim:
+          claimName: datadir
+      - name: certs
+        secret:
+          secretName: cockroachdb.node
+          defaultMode: 256
+      - name: cockroach-env
+        emptyDir: {}
+  podManagementPolicy: Parallel
+  updateStrategy:
+    type: RollingUpdate
+  volumeClaimTemplates:
+  - metadata:
+      name: datadir
+    spec:
+      accessModes:
+        - "ReadWriteOnce"
+      resources:
+        requests:
+          storage: 100Gi
+---
+# Source: cockroachdb/templates/cluster-init-secure.yaml
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: init-cockroachdb
+spec:
+  template:
+    spec:
+      serviceAccountName: create-certs-service-account
+      containers:
+      - name: init-cockroachdb
+        image: 'bitnami/kubectl'
+        command:
+          - sh
+          - -c
+          - |
+            echo "Checking service imports ";
+            CLUSTER_COUNT=3;
+            retryCount=0;
+            while true;
+            do
+              TOTAL_IMPORT_COUNT=$(kubectl get serviceimport -A | grep cockroachdb-cockroachdb |  wc -l | xargs);
+              if [ $CLUSTER_COUNT -eq $TOTAL_IMPORT_COUNT ] 
+              then
+                break;
+              else
+                echo "Waiting for submariner to establish connection - $retryCount"
+                retryCount=retryCount+1;
+              fi
+              sleep 5;
+            done;
+
+            echo "Checking submariner gateway is running"
+            retryCount=0;
+            while true;
+            do
+              READY_STATUS=$(kubectl get pods -l app=submariner-gateway -n submariner-operator  -o jsonpath='{.items[0].status.containerStatuses[0].ready}');
+              RUNNING_STATUS=$(kubectl get pods -l=app='cockroachdb' -o jsonpath='{.items[0].status.containerStatuses[0].state.running}');
+              if [ $READY_STATUS = true ] && 
+                 [ ! -z RUNNING_STATUS ]; then
+                  echo "Submariner gateway is running";
+                  break;
+              else 
+                echo "Waiting for submariner gateway to be ready - $retryCount";
+                retryCount=retryCount+1;
+              fi
+              sleep 5;
+            done;
+
+            echo "Initializing cockroach db"
+            initialized=false;
+            while true;
+            do
+              kubectl get pods;
+              echo "Waiting for Broker to be ready."
+              sleep 5;
+              if ([ "$(kubectl get pods -l=app='cockroachdb' -o jsonpath='{.items[0].status.containerStatuses[0].ready}')" != "true" ] && 
+                [ ! -z "$(kubectl get pods -l=app='cockroachdb' -o jsonpath='{.items[0].status.containerStatuses[0].state.running}')"  ]);
+              then
+                echo "Initializing cockroach db .. "
+                kubectl exec --namespace default -it cockroachdb-0 -- /cockroach/cockroach init --certs-dir=/cockroach/cockroach-certs || true;
+                sleep 20;
+                break;
+              elif ([ "$(kubectl get pods -l=app='cockroachdb' -o jsonpath='{.items[0].status.containerStatuses[0].ready}')" = "true" ] && 
+                [ ! -z "$(kubectl get pods -l=app='cockroachdb' -o jsonpath='{.items[0].status.containerStatuses[0].state.running}')"  ]);
+                break;
+              then
+                echo "Waiting for CockroachDb to start"
+              fi
+            done;
+            kubectl get pods;
+      restartPolicy: Never
+  backoffLimit: 4
+---
+# Source: cockroachdb/templates/cockroachdb-statefulset-secure-eks.yaml
+apiVersion: multicluster.x-k8s.io/v1alpha1
+kind: ServiceExport
+metadata:
+  name: cockroachdb
+  namespace: cockroachdb
