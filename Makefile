@@ -35,8 +35,8 @@ helmlint:
 
 .PHONY: kubeval
 kubeconform:
-	make -f common/Makefile CHARTS="$(wildcard charts/all/*)" kubeconform
-	make -f common/Makefile CHARTS="$(wildcard charts/hub/*)" kubeconform
+	make -f common/Makefile CHARTS="$(wildcard charts/all/*)" KUBECONFORM_SKIP="-skip 'CustomResourceDefinition' -skip 'ServiceExport'" kubeconform
+	make -f common/Makefile CHARTS="$(wildcard charts/hub/*)" KUBECONFORM_SKIP="-skip 'CustomResourceDefinition' -skip 'ServiceExport'" kubeconform
 
 super-linter: ## Runs super linter locally
 	make -f common/Makefile DISABLE_LINTERS="-e VALIDATE_ANSIBLE=false" super-linter
