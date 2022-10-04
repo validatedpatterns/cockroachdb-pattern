@@ -3,7 +3,7 @@
 The pattern deploys CockroachDB across multi OpenShift clusters that are spread across different geographic regions and hosted on clouds like  [Azure](https://portal.azure.com/), [AWS](https://aws.amazon.com/) or [GKE](https://cloud.google.com/kubernetes-engine). It deploys a CockroachDB [StatefulSet](https://kubernetes.io/docs/concepts/workloads/controllers/statefulset/)
 into each separate cluster, and links them by deploying [Submariner add-on](https://access.redhat.com/documentation/en-us/red_hat_advanced_cluster_management_for_kubernetes/2.5/html/add-ons/add-ons-overview#submariner) on the hub cluster.
 
-If you've followed a link to this repo, but are not really sure what it contains
+If you've followed a link to this repository, but are not really sure what it contains
 or how to use it, head over to [Multicloud GitOps](http://hybrid-cloud-patterns.io/multicloud-gitops/)
 for additional context and installation instructions.
 
@@ -44,7 +44,7 @@ service](https://console.redhat.com/openshift/create).
 
 ## How to deploy
 
-1. Fork the [cockroachdb-pattern](https://github.com/hybrid-cloud-patterns/cockroachdb-pattern) repo on GitHub.  It is necessary to fork because your fork will be updated as part of the GitOps and DevOps processes.
+1. Fork the [cockroachdb-pattern](https://github.com/hybrid-cloud-patterns/cockroachdb-pattern) repository on GitHub.  It is necessary to fork because your fork will be updated as part of the GitOps and DevOps processes.
 
 1. Clone the forked copy of this repository.
 
