@@ -25,34 +25,17 @@ clusterGroup:
       automated: {}
       retry:
         limit: 50
+    extraValueFiles:
+      - /values-cockroachdb-tuning.yaml
     overrides:
     - name: provider
       value: gcp
-    - name: replicas
-      value: 3
-    - name: vault.clusterSecretStoreName
-      value: vault-backend
-    - name: resources.requests.cpu
-      value: "1"
-    - name: resources.requests.memory
-      value: "2Gi"
-    - name: resources.limits.cpu
-      value: "1"
-    - name: resources.limits.memory
-      value: "2Gi"
-    - name: clusters.0
-      value: region-one
-    - name: clusters.1
-      value: region-two
-    - name: clusters.2
-      value: region-three
     - name: region
       value: us-central1
     - name: zone
       value: us-central1-a
     - name: clusterName
       value: region-three
-
 
   imperative:
     # NOTE: We *must* use lists and not hashes. As hashes lose ordering once parsed by helm
