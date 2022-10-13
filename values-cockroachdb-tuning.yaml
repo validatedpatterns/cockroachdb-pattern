@@ -1,0 +1,18 @@
+---
+replicas: 3
+
+clusters:
+  - region-one
+  - region-two
+  - region-three
+
+resources:
+  requests:
+    cpu: 1
+    memory: "2Gi"
+  limits:
+    cpu: 1
+    memory: "2Gi"
+
+vault:
+  clusterSecretStoreName: vault-backend
