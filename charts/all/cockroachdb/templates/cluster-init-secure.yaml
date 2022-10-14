@@ -13,7 +13,7 @@ spec:
           - sh
           - -c
           - |
-            echo "Checking service imports ";
+            echo "Check service imports ";
             CLUSTER_COUNT={{ len .Values.clusters }};
             retryCount=0;
             while true;
@@ -29,7 +29,21 @@ spec:
               sleep 5;
             done;
 
-            echo "Checking submariner gateway is running"
+            echo "Check submariner gateway is running"
+            retryCount=0;
+            while true;
+            do
+              GATEWAY_COUNT=$(kubectl get pods -l app=submariner-gateway -n submariner-operator |  grep submariner-gateway | wc -l | xargs);
+              if [ $GATEWAY_COUNT -eq 1 ];
+              then
+                break;
+              else
+                echo "Waiting for submariner gateway to start - $retryCount"
+                (( retryCount++ ))
+              fi
+              sleep 5;
+            done;
+
             retryCount=0;
             while true;
             do
