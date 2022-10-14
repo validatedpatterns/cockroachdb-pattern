@@ -24,7 +24,7 @@ spec:
                 break;
               else
                 echo "Waiting for submariner to establish connection - $retryCount"
-                retryCount=$retryCount+1;
+                (( retryCount++ ))
               fi
               sleep 5;
             done;
@@ -43,7 +43,7 @@ spec:
                   break;
               else 
                 echo "Waiting for submariner gateway to be ready - $retryCount";
-                retryCount=$retryCount+1;
+                (( retryCount++ ))
               fi
               sleep 5;
             done;
