@@ -34,7 +34,9 @@ spec:
             while true;
             do
               READY_STATUS=$(kubectl get pods -l app=submariner-gateway -n submariner-operator  -o jsonpath='{.items[0].status.containerStatuses[0].ready}');
+              echo "READY STATUS = $READY_STATUS";
               RUNNING_STATUS=$(kubectl get pods -l app=submariner-gateway -n submariner-operator -o jsonpath='{.items[0].status.containerStatuses[0].state.running}');
+              echo "RUNNING STATUS = $RUNNING_STATUS";
               if [ $READY_STATUS = true ] && 
                  [ ! -z RUNNING_STATUS ]; then
                   echo "Submariner gateway is running";
