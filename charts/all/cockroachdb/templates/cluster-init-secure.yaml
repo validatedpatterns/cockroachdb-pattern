@@ -1,13 +1,13 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: init-cockroachdb
+  name: init-cockroachdb1
 spec:
   template:
     spec:
       serviceAccountName: create-certs-service-account
       containers:
-      - name: init-cockroachdb
+      - name: init-cockroachdb1
         image: 'bitnami/kubectl'
         command:
           - sh
@@ -24,7 +24,7 @@ spec:
                 break;
               else
                 echo "Waiting for submariner to establish connection - $retryCount"
-                (( retryCount++ ))
+                retryCount=$(( retryCount + 1 ))
               fi
               sleep 5;
             done;
@@ -38,8 +38,8 @@ spec:
               then
                 break;
               else
-                echo "Waiting for submariner gateway to start - $retryCount"
-                (( retryCount++ ))
+                echo "Waiting for submariner gateway to start - $retryCount";
+                retryCount=$(( retryCount + 1 ));
               fi
               sleep 5;
             done;
@@ -57,7 +57,7 @@ spec:
                   break;
               else 
                 echo "Waiting for submariner gateway to be ready - $retryCount";
-                (( retryCount++ ))
+                retryCount=$(( retryCount + 1 ));
               fi
               sleep 5;
             done;
@@ -68,11 +68,11 @@ spec:
             do
               kubectl get pods;
               echo "Waiting for Broker to be ready."
-              sleep 120;
+              sleep 20;
               if ([ "$(kubectl get pods -l=app='cockroachdb' -o jsonpath='{.items[0].status.containerStatuses[0].ready}')" != "true" ] && 
                 [ ! -z "$(kubectl get pods -l=app='cockroachdb' -o jsonpath='{.items[0].status.containerStatuses[0].state.running}')"  ]);
               then
-                sleep 180;
+                sleep 20;
                 echo "Initializing cockroach db .. "
                 kubectl exec --namespace {{ .Release.Namespace }} -it cockroachdb-0 -- /cockroach/cockroach init --certs-dir=/cockroach/cockroach-certs || true;
                 sleep 20;
