@@ -8,7 +8,7 @@ data:
   IMAGE_PROVIDER: 
   IMAGE_ACCOUNT: PLAINTEXT
   GIT_EMAIL: someone@somewhere.com
-  GIT_DEV_REPO_URL: https://github.com/hybrid-cloud-patterns/manuela-dev.git
+  GIT_DEV_REPO_URL: https://github.com/validatedpatterns/manuela-dev.git
   GIT_DEV_REPO_REVISION: main
   GIT_OPS_REPO_TEST_URL: https://github.com/pattern-clone/mypattern
   GIT_OPS_REPO_TEST_REVISION: 

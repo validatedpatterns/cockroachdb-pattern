@@ -138,7 +138,7 @@ data:
       cluster_example_ca: /path/to/ca.file
     global:
       git:
-        account: hybrid-cloud-patterns
+        account: validatedpatterns
         dev_revision: main
         email: someone@somewhere.com
         hostname: github.com
