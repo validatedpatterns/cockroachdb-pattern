@@ -4,7 +4,7 @@ The pattern deploys CockroachDB across multi OpenShift clusters that are spread 
 into each separate cluster, and links them by deploying [Submariner add-on](https://access.redhat.com/documentation/en-us/red_hat_advanced_cluster_management_for_kubernetes/2.5/html/add-ons/add-ons-overview#submariner) on the hub cluster.
 
 If you've followed a link to this repository, but are not really sure what it contains
-or how to use it, head over to [Multicloud GitOps](http://hybrid-cloud-patterns.io/multicloud-gitops/)
+or how to use it, head over to [Multicloud GitOps](http://validatedpatterns.io/multicloud-gitops/)
 for additional context and installation instructions.
 
 ## Prerequisites
