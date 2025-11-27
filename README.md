@@ -44,7 +44,7 @@ service](https://console.redhat.com/openshift/create).
 
 ## How to deploy
 
-1. Fork the [cockroachdb-pattern](https://github.com/hybrid-cloud-patterns/cockroachdb-pattern) repository on GitHub.  It is necessary to fork because your fork will be updated as part of the GitOps and DevOps processes.
+1. Fork the [cockroachdb-pattern](https://github.com/validatedpatterns/cockroachdb-pattern) repository on GitHub.  It is necessary to fork because your fork will be updated as part of the GitOps and DevOps processes.
 
 1. Clone the forked copy of this repository.
 
@@ -192,6 +192,6 @@ service](https://console.redhat.com/openshift/create).
 
 ## Next Steps
 
-[Help & Feedback](https://groups.google.com/g/hybrid-cloud-patterns)
+[Help & Feedback](https://groups.google.com/g/validatedpatterns)
 
-[Report Bugs](https://github.com/hybrid-cloud-patterns/cockroachdb-pattern/issues)
+[Report Bugs](https://github.com/validatedpatterns/cockroachdb-pattern/issues)
