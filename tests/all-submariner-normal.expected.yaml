@@ -9,7 +9,7 @@ spec:
   globalnetEnabled: false
 ---
 # Source: submariner/templates/submariner.yaml
-apiVersion: external-secrets.io/v1alpha1
+apiVersion: external-secrets.io/v1beta1
 kind: ExternalSecret
 metadata:
   name: region-one-aws-creds
@@ -32,7 +32,7 @@ spec:
       property: aws_secret_access_key
 ---
 # Source: submariner/templates/submariner.yaml
-apiVersion: external-secrets.io/v1alpha1
+apiVersion: external-secrets.io/v1beta1
 kind: ExternalSecret
 metadata:
   name: region-three-gcp-creds

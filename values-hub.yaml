@@ -10,7 +10,8 @@ clusterGroup:
   namespaces:
   - open-cluster-management
   - vault
-  - golang-external-secrets
+  - external-secrets-operator
+  - external-secrets
   - submariner
   - region-one
   - region-two
@@ -23,6 +24,10 @@ clusterGroup:
       namespace: open-cluster-management
       channel: release-2.5
       csv: advanced-cluster-management.v2.5.0
+    eso:
+      name: openshift-external-secrets-operator
+      namespace: external-secrets-operator
+      channel: stable-v1
 
   projects:
   - hub
@@ -97,11 +102,14 @@ clusterGroup:
       - name: server.image.tag
         value: "1.10.3-ubi"
 
-    golang-external-secrets:
-      name: golang-external-secrets
-      namespace: golang-external-secrets
+    openshift-external-secrets:
+      name: openshift-external-secrets
+      namespace: external-secrets
       project: hub
-      path: common/golang-external-secrets
+      chart: openshift-external-secrets
+      chartVersion: 0.0.*
+      annotations:
+        argocd.argoproj.io/sync-wave: "30"
 
   imperative:
     # NOTE: We *must* use lists and not hashes. As hashes lose ordering once parsed by helm
