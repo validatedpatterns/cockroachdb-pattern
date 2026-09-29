@@ -13,7 +13,7 @@ spec:
 
 {{- if eq .provider "aws" }}
 ---
-apiVersion: external-secrets.io/v1alpha1
+apiVersion: external-secrets.io/v1beta1
 kind: ExternalSecret
 metadata:
   name: {{ .name }}-aws-creds
@@ -53,7 +53,7 @@ spec:
 {{- end }}
 {{- if eq .provider "gcp" }}
 ---
-apiVersion: external-secrets.io/v1alpha1
+apiVersion: external-secrets.io/v1beta1
 kind: ExternalSecret
 metadata:
   name: {{ .name }}-{{ .provider }}-creds

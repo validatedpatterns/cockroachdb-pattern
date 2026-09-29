@@ -8,11 +8,9 @@ jobs:
 
     steps:
       # Important: This sets up your GITHUB_WORKSPACE environment variable
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4 # zizmor: ignore[unpinned-uses]
 
       - name: Lint Ansible Playbook
-        # Using the latest as of today (2022-06-23) v6.2.1
-        uses: ansible/ansible-lint-action@v6.2.1
-        # Let's point it to the path
+        uses: ansible/ansible-lint@v26 # zizmor: ignore[unpinned-uses]
         with:
-          path: "ansible/"
+          args: "-c .ansible-lint ansible/"
